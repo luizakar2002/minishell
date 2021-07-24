@@ -8,7 +8,7 @@
 # include "libft/libft.h"
 
 ///define errors
-
+///trying to push
 typedef struct s_str
 {
 	char	*command;
