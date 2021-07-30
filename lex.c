@@ -1,27 +1,7 @@
 #include "minishell.h"
 
-// simple_com	*init_simple_com(simple_com *s, char *str)
-// {
-// 	s = malloc(sizeof(simple_com));
-// 	if (!s)
-// 		error_exit(1);
-// 	s->command = NULL;
-// 	s->option = NULL;
-// 	s->arg = NULL;
-// 	s->infile = malloc(sizeof(char *) * char_count(str, '<'));
-// 	s->outfile = malloc(sizeof(char *) * char_count(str, '>'));
-// 	s->errfile = malloc(sizeof(char *) * str_count(str, "2>"));
-// 	if ((!s->infile || !s->outfile || !s->errfile) && char_count(str, '<') && char_count(str, '>') && str_count(str, "2>"))
-// 		error_exit(1);
-// 	fill_null(s->infile, char_count(str, '<'));
-// 	fill_null(s->outfile, char_count(str, '>'));
-// 	fill_null(s->errfile, str_count(str, "2>"));
-// 	return (s);
-// }
-
-
 // >   "dsaf""faffa" e''cho -n     is not working
-simple_com	*init_simple_com(simple_com *s, char *str)
+simple_com	*init_simple_com(simple_com *s, char *str, char **env)
 {
 	s = malloc(sizeof(simple_com));
 	if (!s)
@@ -29,14 +9,10 @@ simple_com	*init_simple_com(simple_com *s, char *str)
 	s->command = NULL;
 	s->option = NULL;
 	s->arg = NULL;
-	s->infile = malloc(sizeof(char *) * (char_count(str, '<') + 1));
-	fill_null(s->infile, (char_count(str, '<') + 1));
-	s->outfile = malloc(sizeof(char *) * (char_count(str, '>') + 1));
-	fill_null(s->outfile, (char_count(str, '>') + 1));
-	s->errfile = malloc(sizeof(char *) * (str_count(str, "2>") + 1));
-	fill_null(s->errfile, (str_count(str, "2>") + 1));
-	if (!s->outfile || !s->outfile || !s->errfile)
-		error_exit(1);
+	s->infile = 0;
+	s->outfile = 1;
+	s->errfile = 2;
+	s->env = env;
 	return (s);
 }
 
@@ -94,27 +70,29 @@ char	*token(char *str, simple_com *s)
 	else if (check(token, s) == 2)
 		s->option = token;
 	else if (check(token, s) == 3)
-		s->arg = token; // ft_join
+		s->arg = ft_strjoin(s->arg, token);
 	else if (check(token, s) == 4)
-		fill_matrix(s->infile, token + 1);
+		fill_fd(s->infile, token + 1, 4);
 	else if (check(token, s) == 5)
-		fill_matrix(s->outfile, token + 1);
+		fill_fd(s->outfile, token + 1, 5);
 	else if (check(token, s) == 6)
-		fill_matrix(s->errfile, token + 2);
+		fill_fd(s->errfile, token + 2, 6);
+	else if (check(token, s) == 7)
+		fill_fd(s->outfile, token + 2, 7);
 	return (str + i);
 }
 
-simple_com	*fill_struct(char *str)
+simple_com	*fill_struct(char *str, char **env)
 {
 	simple_com	*s;
 
-	s = init_simple_com(s, str);
+	s = init_simple_com(s, str, env);
 	while (*str)
 		str = token(str, s);
 	return (s);
 }
 
-simple_com	*split_pipes(char *str)
+simple_com	*split_pipes(char *str, char **env)
 {
 	char 		**tab;
 	simple_com	*arr;
@@ -127,7 +105,7 @@ simple_com	*split_pipes(char *str)
 	i = 0;
 	while (i < (char_count(str, '|') + 1))
 	{
-		arr[i] = *fill_struct(tab[i]);
+		arr[i] = *fill_struct(tab[i], env);
 		++i;
 	}
 	//i++;
@@ -149,7 +127,7 @@ int	main(int ac, char **av, char **env)
 
 	str = readline(NULL);
 	n = char_count(str, '|') + 1;
-	s = split_pipes(str);
+	s = split_pipes(str, env);
 	exec(s, n);
 	//open files
 	// while (pid != 0)

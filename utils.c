@@ -59,7 +59,9 @@ int	check(char *str, simple_com *s)
 		return (5);
 	else if (str && str[0] == '2' && str[1] == '>')
 		return (6);
-	else if (str && compare(s->command, "echo") && compare(str, "-n"))
+	else if (str && str[0] == '>' && str[1] == '>')
+		return (7);
+	else if (str && str[0] == '-')
 		return (2);
 	else if (s->command == NULL && str)
 		return (1);
@@ -74,14 +76,21 @@ void	fill_null(char **arr, int c)
 		arr[c] = NULL;
 }
 
-void	fill_matrix(char **arr, char *str)
+void	fill_fd(int arr, char *str, int flag)
 {
-	int i;
+	static int count = 0;
 
-	i = 0;
-	while (arr[i] != NULL)
-		i++;
-	arr[i] = str;
+	if (count)
+		close(arr);
+	if (flag == 4)
+		arr = open(str, O_RDONLY);
+	else if (flag == 5)
+		arr = open(str, O_WRONLY | O_TRUNC | O_CREAT);
+	else if (flag == 6)
+		arr = open(str, O_WRONLY | O_TRUNC | O_CREAT);
+	else if (flag == 7)
+		arr = open(str, O_WRONLY | O_APPEND | O_CREAT);
+	++count;
 }
 
 char	*add_front(char *str, char c)
@@ -178,7 +187,7 @@ char	*remove_quote(char *str)
 	return (s);
 }
 
-int	builtin_command(char *com)
+int	is_builtin(char *com)
 {
 	int	i;
 	char	*c[7] = {"echo", "cd", "pwd", "export", "unset", "env", "exit"};
@@ -213,3 +222,5 @@ int	builtin_command(char *com)
 // 		++s;
 // 	}
 // }
+
+//////getpath#

@@ -1,9 +1,9 @@
 NAME	= minishell
 
-# SRCS	= $(wildcard *.c)
-SRCS = lex.c \
-		utils.c \
-		execution.c
+SRCS	= $(wildcard *.c)
+# SRCS = lex.c \
+# 		utils.c \
+# 		execution.c
 
 OBJS	= $(SRCS:%.c=%.o)
 
