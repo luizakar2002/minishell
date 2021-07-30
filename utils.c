@@ -10,10 +10,10 @@ int	char_count(char *str, char c)
 	while (str[i])
 		if (str[i++] == c)
 			++count;
-	return (++count);
+	return (count);
 }
 
-int	err_count(char *str)
+int	str_count(char *str, char *s)
 {
 	int	count;
 	int	i;
@@ -21,9 +21,9 @@ int	err_count(char *str)
 	i = -1;
 	count = 0;
 	while (str[++i])
-		if (str[i] == '2' && str[i + 1] == '>')
+		if (str[i] == s[0] && str[i + 1] == s[1])
 			++count;
-	return (++count);
+	return (count);
 }
 
 void	error_exit(int error)
@@ -33,22 +33,39 @@ void	error_exit(int error)
 		printf("No memory to allocate\n");
 		exit(1);
 	}
+	else if (error == 2)
+	{
+		printf("Command not found\n");
+		exit(2);
+	}
+	else if (error == 3)
+	{
+		printf("Bad quoting\n");
+		exit(3);
+	}
+	else if (error == 4)
+	{
+		printf("unvalid option\n");
+		exit(4);
+	}
 }
 
 int	check(char *str, simple_com *s)
 {
+	//printf("%s\n", str);
 	if (str && str[0] == '<')
 		return (4);
 	else if (str && str[0] == '>')
 		return (5);
 	else if (str && str[0] == '2' && str[1] == '>')
 		return (6);
-	else if (str && str[0] == '-' && str[1] == 'n')
+	else if (str && compare(s->command, "echo") && compare(str, "-n"))
 		return (2);
-	else if (s->command == NULL)
+	else if (s->command == NULL && str)
 		return (1);
-	else
+	else if (str)
 		return (3);
+	return (-1);
 }
 
 void	fill_null(char **arr, int c)
@@ -66,3 +83,133 @@ void	fill_matrix(char **arr, char *str)
 		i++;
 	arr[i] = str;
 }
+
+char	*add_front(char *str, char c)
+{
+	int	len;
+	char	*ret;
+	int		i;
+	int		j;
+
+	i = 0;
+	j = 0;	
+	len = ft_strlen(str);
+	if (!(ret = malloc(sizeof(char) * (len + 2))))
+		error_exit(1);
+	ret[i] = c;
+	i++;
+	while (j < len)
+		ret[i++] = str[j++];
+	ret[i++] = '\0';
+	return (ret);
+}
+
+int		compare(char *s1, char *s2)
+{
+	int	l1;
+	int	l2;
+
+	l1 = ft_strlen(s1);
+	l2 = ft_strlen(s2);
+	if (l1 != l2)
+		return (0);
+	while (l1 > 0)
+	{
+		if (*s1 != *s2)
+			return (0);
+		s1++;
+		s2++;
+		l1--;
+	}
+	return (1);
+}
+
+int	special_char(char *str)
+{
+	int		i;
+	int		j;
+	char 	c[] = {' ', '>', '<', '$', '|'};
+	char	*c1[] = {">>", "<<", "2>"};
+
+	i = 0;
+	j = 0;
+	while (i < 5 && char_count(str, c[i]) == 0)
+		i++;
+	while (j < 3 && str_count(str, c1[j]) == 0)
+	{
+		i++;
+		j++;
+	}	
+	if (i == 8)
+		return (0); //no special chars
+	else
+		return (1);
+}
+
+char	*remove_quote(char *str)
+{
+	char *s;
+	int	size;
+	int i;
+	int	j;
+
+	if (!str)
+		return (str);
+	if (!(char_count(str, '"') || char_count(str, '\'')))
+		return (str);
+	if (special_char(str))
+		return (str);
+	if(char_count(str, '"') % 2 != 0 || char_count(str, '\'') % 2 != 0)
+		error_exit(3);
+	else
+		size = ft_strlen(str) - char_count(str, '"') - char_count(str, '\'') + 1;
+	//printf("size %d\n", size);
+	s = malloc(sizeof(char) * size);
+	i = 0;
+	j = 0;
+	while (i < size)
+	{
+		if (str[j] != '"' && str[j] != '\'')
+			s[i++] = str[j];
+		j++;
+	}
+	i++;
+	s[i] = '\0';
+	return (s);
+}
+
+int	builtin_command(char *com)
+{
+	int	i;
+	char	*c[7] = {"echo", "cd", "pwd", "export", "unset", "env", "exit"};
+
+	i = 0;
+	while (i < 7 && compare(com, c[i]) == 0)
+	{
+		i++;
+	}
+	if (i == 7)
+		return (1);
+	return (0); // builtin
+}
+
+// void	print(simple_com *s)
+// {
+// 	while (s->command)
+// 	{
+// 		printf("command %s\n", s->command);
+// 		printf("option %s\n", s->option);
+// 		printf("arg %s\n", s->arg);
+// 		i = 0;
+// 		while (s->infile[i])
+// 			printf("infile %s\n", s->infile[i++]);
+// 		i = 0;
+// 		while (s->outfile[i])
+// 			printf("outfile %s\n", s->outfile[i++]);
+// 		i = 0;
+// 		while (s->errfile[i])
+// 			printf("errfile %s\n", s->errfile[i++]);
+// 		printf("\n");
+// 		++s;
+// 	}
+// }

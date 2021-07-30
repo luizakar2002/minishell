@@ -1,6 +1,10 @@
 NAME	= minishell
 
-SRCS	= $(wildcard *.c)
+# SRCS	= $(wildcard *.c)
+SRCS = lex.c \
+		utils.c \
+		execution.c
+
 OBJS	= $(SRCS:%.c=%.o)
 
 GCC		= gcc -Wall -Werror -Wextra 

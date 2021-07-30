@@ -26,9 +26,15 @@ simple_com	*init_simple_com(simple_com *s, char *str);
 int			char_count(char *str, char c);
 simple_com	*fill_struct(char *str);
 int			check(char *str, simple_com *s);
-int			err_count(char *str);
+int			str_count(char *str, char *s);
 void		error_exit(int error);
 void		fill_null(char **arr, int c);
 void		fill_matrix(char **arr, char *str);
+char		*add_front(char *str, char c);
+int			compare(char *s1, char *s2);
+char		*remove_quote(char *str);
+int			builtin_command(char *com);
+void		exec(simple_com *s, int n);
+int			special_char(char *str);
 
 #endif
