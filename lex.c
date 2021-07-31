@@ -125,10 +125,24 @@ int	main(int ac, char **av, char **env)
 	pid_t		wpid;
 	int			status;
 
-	str = readline(NULL);
-	n = char_count(str, '|') + 1;
-	s = split_pipes(str, env);
-	exec(s, n);
+	while (1)
+	{
+		str = readline("Enter Command :");
+		add_history(str);
+		if (!ft_strncmp(str, "exit", 4))
+			break ;
+		n = char_count(str, '|') + 1;
+		s = split_pipes(str, env);
+		exec(s, n);
+		free(str);
+	}
+	// while (ft_strncmp(str, "exit", 4))
+	// {
+	// 	str = readline(NULL);
+	// 	n = char_count(str, '|') + 1;
+	// 	s = split_pipes(str, env);
+	// 	exec(s, n);
+	// }
 	//open files
 	// while (pid != 0)
 	// 	pid = fork();

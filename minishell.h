@@ -4,6 +4,7 @@
 # include <stdlib.h>
 # include <unistd.h>
 # include <signal.h>
+# include <string.h>
 # include <stdio.h>
 # include <fcntl.h>
 # include "libft/libft.h"
@@ -43,6 +44,9 @@ void		exec(simple_com *s, int n);
 int			special_char(char *str);
 simple_com	*split_pipes(char *str, char **env);
 char		**merge(simple_com *s);
+int			exec_com(simple_com *s, int fd[2]);
+int			echo(simple_com *s);
+int			call_command(simple_com *s);
 char		*get_cmd_path(simple_com *s);
 
 
