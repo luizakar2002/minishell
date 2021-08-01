@@ -48,6 +48,21 @@ void	error_exit(int error)
 		printf("unvalid option\n");
 		exit(4);
 	}
+	else if (error == 5)
+	{
+		printf("write problem\n");
+		exit(5);
+	}
+	else if (error == 6)
+	{
+		printf("pipe problem\n");
+		exit(6);
+	}
+	else if (error == 7)
+	{
+		printf("fork problem\n");
+		exit(7);
+	}
 }
 
 int	check(char *str, simple_com *s)

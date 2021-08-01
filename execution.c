@@ -10,18 +10,12 @@ int	exec_com(simple_com *s, int fd[2])
 	// }
 	// if (is_builtin(s->command)) //not a builtin
 	// {
-		write(2, "dup\n", 4);
 		dup2(s->infile, STDIN_FILENO);
-		write(2, "dup2\n", 5);
 		dup2(s->outfile, STDOUT_FILENO);
-		// close(fd[0]);
-		// close(fd[1]);
-		write(2, "Done dup\n", 9);
-		// exit(0);
 		if (execve(get_cmd_path(s), merge(s), s->env) == -1)
-			write(2, "error\n", 6);
+			perror("lsh");
 		exit(0);
-	// }
+	//}
 	// else 
 	// {
 	// 	status = call_command(s);
@@ -32,58 +26,57 @@ int	exec_com(simple_com *s, int fd[2])
 void	exec(simple_com *s, int n)
 {
 	int 	i;
-	int		fd[2];
-	pid_t	pid;
+	int		j;
+	int		fd[n][2];
+	int		pids[n];
 	int		status;
 
 	i = 0;
-	// if (n == 1 && is_builtin(s->command))
-	// 	exec_com(s, NULL);
-	pipe(fd);
-	pid = 1;
-	while (pid != 0 && i < n)
+	while (i < n + 1)
 	{
-		ft_putstr_fd("PARENT id is:", 2);
-		ft_putnbr_fd(getpid(), 2);
-		ft_putstr_fd("\n", 2);
-		pid = fork();
+		if (pipe(fd[i]) == -1)
+			error_exit(6);
+		i++;
+	}
 
-		write(1, "\n", 1);		
-		if (pid == 0)
+	i = 0;
+	pids[i] = 1;
+	while (pids[i] != 0 && i < n)
+	{
+		pids[i] = fork();
+		if (pids[i] == -1)
+			error_exit(7);
+		//child process		
+		if (pids[i] == 0)
 		{
-			ft_putstr_fd("child id is:", 2);
-			ft_putnbr_fd(getpid(), 2);
-			ft_putstr_fd("\nparent id is:", 2);
-			ft_putnbr_fd(getppid(), 2);
-			ft_putstr_fd("\n", 2);
+			j = 0;
+			while (j < n + 1)
+			{
+				if (i != j)
+					close(fd[j][0]);
+				if (i + 1 != j)
+					close(fd[j][1]);
+				j++;
+			}
 			if (s[i + 1].command != NULL)
-				s[i].outfile = fd[1];
-			// else
-			// 	close (fd[1]);
+				s[i].outfile = fd[i + 1][1];
 			if (s[i].infile == 0 && i != 0)
-				s[i].infile = fd[0];
-			// else
-			// 	close (fd[0]);
-			write(2, "exec com\n", 9);
-			exec_com(&s[i], fd);
-			////////------------- erkusn el arajini outputn en vercrel--------------------------
+				s[i].infile = fd[i][0];
+			exec_com(&s[i], fd[i]);	
 		}
 		else
 		{
-			// if (i != n - 1)
-			// {
-			// 	write(2, "waiting\n", 8);
-			ft_putstr_fd("waited child's id is:", 2);
-			ft_putnbr_fd(pid, 2);
-			ft_putstr_fd("\n", 2);
 			//wait(NULL);
-			waitpid(pid, NULL, 0);
-			// ft_putnbr_fd(status, 2);
-			write(2, "Done waiting\n", 13);
-			// }
+			
+			waitpid(pids[i], NULL, 0);
+			close(fd[i + 1][1]);
+
 		}
 		i++;
 	}
+	// printf("closing\n");
+	// close(fd[0]);
+	// close(fd[1]);
 }
 
 // int	call_command(simple_com *s)
