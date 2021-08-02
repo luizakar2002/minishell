@@ -1,6 +1,5 @@
 #include "minishell.h"
 
-//////getpath
 char	**merge(simple_com *s)
 {
 	char	**r;
@@ -54,4 +53,14 @@ char *get_cmd_path(simple_com *s)
     }
     //exit_message(data, "Commmand not found\n", EXIT_FAILURE);
     return (NULL);
+}
+
+int env_size(char **env)
+{
+	int size;
+
+	size = 0;
+	while (env[size])
+		size++;
+	return (size);
 }

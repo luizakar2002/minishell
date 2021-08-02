@@ -1,6 +1,5 @@
 #include "minishell.h"
 
-// >   "dsaf""faffa" e''cho -n     is not working
 simple_com	*init_simple_com(simple_com *s, char *str, char **env)
 {
 	s = malloc(sizeof(simple_com));
@@ -33,7 +32,7 @@ char	*token(char *str, simple_com *s)
 	redir = '.';
 	while (str[i] && ft_isspace(str[i]))
 		i++;
-	if (str[i] == '<' || str[i] == '>' || (str[i] == '2' && str[i+1] == '>'))
+	if (str[i] == '<' || str[i] == '>' || (str[i] == '2' && str[i+1] == '>') || (str[i] == '>' && str[i+1] == '>'))
 	{
 		redir = str[i];
 		i++;
@@ -50,6 +49,15 @@ char	*token(char *str, simple_com *s)
 				len++;
 			}
 			i++;
+		}
+		else
+		{
+			start = i;
+			while (str[i] && !ft_isspace(str[i]))
+			{
+				i++;
+				len++;
+			}
 		}
 	}
 	else
@@ -72,13 +80,13 @@ char	*token(char *str, simple_com *s)
 	else if (check(token, s) == 3)
 		s->arg = ft_strjoin(s->arg, token);
 	else if (check(token, s) == 4)
-		fill_fd(s->infile, token + 1, 4);
+		fill_fd(&s->infile, token + 1, 4);
 	else if (check(token, s) == 5)
-		fill_fd(s->outfile, token + 1, 5);
+		fill_fd(&s->outfile, token + 1, 5);
 	else if (check(token, s) == 6)
-		fill_fd(s->errfile, token + 2, 6);
+		fill_fd(&s->errfile, token + 2, 6);
 	else if (check(token, s) == 7)
-		fill_fd(s->outfile, token + 2, 7);
+		fill_fd(&s->outfile, token + 2, 7);
 	return (str + i);
 }
 
@@ -127,15 +135,19 @@ int	main(int ac, char **av, char **env)
 
 	while (1)
 	{
-		str = readline("Enter Command :");
+		str = readline("Supercool Shell > ");
 		add_history(str);
 		if (!ft_strncmp(str, "exit", 4))
 			break ;
 		n = char_count(str, '|') + 1;
 		s = split_pipes(str, env);
+		print(s);
 		exec(s, n);
 		free(str);
 	}
+	// close(s->outfile);
+	// close(s->infile);
+	// close(s->errfile);
 	// while (ft_strncmp(str, "exit", 4))
 	// {
 	// 	str = readline(NULL);

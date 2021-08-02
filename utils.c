@@ -67,7 +67,6 @@ void	error_exit(int error)
 
 int	check(char *str, simple_com *s)
 {
-	//printf("%s\n", str);
 	if (str && str[0] == '<')
 		return (4);
 	else if (str && str[0] == '>')
@@ -91,20 +90,23 @@ void	fill_null(char **arr, int c)
 		arr[c] = NULL;
 }
 
-void	fill_fd(int arr, char *str, int flag)
+void	fill_fd(int *arr, char *str, int flag)
 {
 	static int count = 0;
 
 	if (count)
-		close(arr);
+		close(*arr);
 	if (flag == 4)
-		arr = open(str, O_RDONLY);
+		*arr = open(str, O_RDONLY);
 	else if (flag == 5)
-		arr = open(str, O_WRONLY | O_TRUNC | O_CREAT);
+		*arr = open(str, O_WRONLY | O_RDONLY | O_TRUNC | O_CREAT | S_IRUSR
+			| S_IWUSR | S_IRGRP | S_IROTH , 0777);
 	else if (flag == 6)
-		arr = open(str, O_WRONLY | O_TRUNC | O_CREAT);
+		*arr = open(str, O_WRONLY | O_RDONLY | O_TRUNC | O_CREAT | S_IRUSR
+			| S_IWUSR | S_IRGRP | S_IROTH, 0777);
 	else if (flag == 7)
-		arr = open(str, O_WRONLY | O_APPEND | O_CREAT);
+		*arr = open(str, O_WRONLY | O_RDONLY | O_APPEND | O_CREAT | S_IRUSR
+			| S_IWUSR | S_IRGRP | S_IROTH, 0777);
 	++count;
 }
 
@@ -217,25 +219,24 @@ int	is_builtin(char *com)
 	return (0); // builtin
 }
 
-// void	print(simple_com *s)
+// char **create_arg(simple_com *s, char *str)
 // {
-// 	while (s->command)
-// 	{
-// 		printf("command %s\n", s->command);
-// 		printf("option %s\n", s->option);
-// 		printf("arg %s\n", s->arg);
-// 		i = 0;
-// 		while (s->infile[i])
-// 			printf("infile %s\n", s->infile[i++]);
-// 		i = 0;
-// 		while (s->outfile[i])
-// 			printf("outfile %s\n", s->outfile[i++]);
-// 		i = 0;
-// 		while (s->errfile[i])
-// 			printf("errfile %s\n", s->errfile[i++]);
-// 		printf("\n");
-// 		++s;
-// 	}
+// 	int	size;
+
+// 	size = env_size(s->arg);
 // }
 
-//////getpath#
+void	print(simple_com *s)
+{
+	while (s->command)
+	{
+		printf("command %s\n", s->command);
+		printf("option %s\n", s->option);
+		printf("arg %s\n", s->arg);
+			printf("infile %d\n", s->infile);
+			printf("outfile %d\n", s->outfile);
+			printf("errfile %d\n", s->errfile);
+		printf("\n");
+		++s;
+	}
+}

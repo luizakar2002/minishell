@@ -4,22 +4,19 @@ int	exec_com(simple_com *s, int fd[2])
 {
 	int status;
 
-	// if (is_builtin(s->command) && !fd)
-	// {
-
-	// }
-	// if (is_builtin(s->command)) //not a builtin
-	// {
+	if (is_builtin(s->command))
+	{
 		dup2(s->infile, STDIN_FILENO);
 		dup2(s->outfile, STDOUT_FILENO);
 		if (execve(get_cmd_path(s), merge(s), s->env) == -1)
 			perror("lsh");
 		exit(0);
-	//}
-	// else 
-	// {
-	// 	status = call_command(s);
-	// }
+	}
+	else 
+	{
+		status = call_command(s);
+		exit(0);
+	}
 	return (0);
 }
 
@@ -31,6 +28,11 @@ void	exec(simple_com *s, int n)
 	int		pids[n];
 	int		status;
 
+	if (n == 1 && !is_builtin(s->command))
+	{
+		call_command(s);
+		return ;
+	}
 	i = 0;
 	while (i < n + 1)
 	{
@@ -45,8 +47,7 @@ void	exec(simple_com *s, int n)
 	{
 		pids[i] = fork();
 		if (pids[i] == -1)
-			error_exit(7);
-		//child process		
+			error_exit(7);	
 		if (pids[i] == 0)
 		{
 			j = 0;
@@ -58,7 +59,9 @@ void	exec(simple_com *s, int n)
 					close(fd[j][1]);
 				j++;
 			}
-			if (s[i + 1].command != NULL)
+			if (s[i + 1].command != NULL && s[i].outfile == 1)
+				s[i].outfile = fd[i + 1][1];
+			else if (s[i + 1].command != NULL && s[i].outfile != 1)
 				s[i].outfile = fd[i + 1][1];
 			if (s[i].infile == 0 && i != 0)
 				s[i].infile = fd[i][0];
@@ -66,36 +69,30 @@ void	exec(simple_com *s, int n)
 		}
 		else
 		{
-			//wait(NULL);
-			
 			waitpid(pids[i], NULL, 0);
 			close(fd[i + 1][1]);
-
 		}
 		i++;
 	}
-	// printf("closing\n");
-	// close(fd[0]);
-	// close(fd[1]);
 }
 
-// int	call_command(simple_com *s)
-// {
-// 	int status;
+int	call_command(simple_com *s)
+{
+	int status;
 
-// 	if (compare(s->command, "echo"))
-// 		status = echo(s);
-// 	// else if (compare(s->command, "cd"))
-// 	// 	status = cd(s);
-// 	// else if (compare(s->command, "pwd"))
-// 	// 	status = pwd(s);
-// 	// else if (compare(s->command, "export"))
-// 	// 	status = export(s);
-// 	// else if (compare(s->command, "unset"))
-// 	// 	status = unset(s);
-// 	// else if (compare(s->command, "env"))
-// 	// 	status = env(s);
-// 	// else if (compare(s->command, "exit"))
-// 	// 	status = exit(s);
-// 	return (status);
-// }
+	if (compare(s->command, "echo"))
+		status = echo(s);
+	else if (compare(s->command, "cd"))
+		status = changedir(s);
+	else if (compare(s->command, "pwd"))
+		status = pwd(s);
+	// else if (compare(s->command, "export"))
+	// 	status = export(s);
+	// else if (compare(s->command, "unset"))
+	// 	status = unset(s);
+	else if (compare(s->command, "env"))
+		status = print_env(s);
+	else if (compare(s->command, "exit"))
+		exit(0);
+	return (status);
+}
