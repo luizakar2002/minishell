@@ -5,19 +5,19 @@ char	**merge(simple_com *s)
 	char	**r;
 	int		size;
 	int		i;
+	int		j;
 
-	size = 4;
 	i = 0;
-	if (!s->option)
-		size--;
-	if (!s->arg)
-		size--;
+	j = 0;
+	if (s->option)
+		++size;
 	r = malloc(sizeof(char *) * size);
 	r[i++] = s->command;
 	if (s->option)
 		r[i++] = s->option;
 	if (s->arg)
-		r[i++] = s->arg;
+		while (s->arg[j])
+			r[i++] = s->arg[j++];
 	r[i] = NULL;
 	return (r);
 }
@@ -30,9 +30,9 @@ char *get_cmd_path(simple_com *s)
     int fd;
 	char	**paths;
 
-	while (s->env[i] && ft_strncmp(s->env[i], "PATH=", 5))
+	while (myenv[i] && ft_strncmp(myenv[i], "PATH=", 5))
 		++i;
-	paths = ft_split(s->env[i], ':');
+	paths = ft_split(myenv[i], ':');
     if (ft_strchr(s->command, '/'))
 		return (s->command);
 	i = -1;
@@ -59,6 +59,8 @@ int env_size(char **env)
 {
 	int size;
 
+	if (!env)
+		return (0);
 	size = 0;
 	while (env[size])
 		size++;

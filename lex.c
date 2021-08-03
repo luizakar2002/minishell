@@ -11,7 +11,6 @@ simple_com	*init_simple_com(simple_com *s, char *str, char **env)
 	s->infile = 0;
 	s->outfile = 1;
 	s->errfile = 2;
-	s->env = env;
 	return (s);
 }
 
@@ -78,7 +77,7 @@ char	*token(char *str, simple_com *s)
 	else if (check(token, s) == 2)
 		s->option = token;
 	else if (check(token, s) == 3)
-		s->arg = ft_strjoin(s->arg, token);
+		s->arg = create_arg(s, token);
 	else if (check(token, s) == 4)
 		fill_fd(&s->infile, token + 1, 4);
 	else if (check(token, s) == 5)
@@ -133,6 +132,7 @@ int	main(int ac, char **av, char **env)
 	pid_t		wpid;
 	int			status;
 
+	myenv = env;
 	while (1)
 	{
 		str = readline("Supercool Shell > ");
@@ -141,7 +141,7 @@ int	main(int ac, char **av, char **env)
 			break ;
 		n = char_count(str, '|') + 1;
 		s = split_pipes(str, env);
-		print(s);
+		// print(s);
 		exec(s, n);
 		free(str);
 	}

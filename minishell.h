@@ -12,15 +12,16 @@
 # include <readline/history.h>
 
 ///define errors
+char **myenv;
 typedef struct s_str
 {
 	char	*command;
 	char	*option;
-	char	*arg;
+	char	**arg;
 	int		infile;
 	int		outfile;
 	int		errfile;
-	char	**env;
+	// char	**env;
 	//keep status
 }				simple_com;
 
@@ -50,6 +51,9 @@ int 		print_env(simple_com *s);
 int 		pwd(simple_com *s);
 int 		env_size(char **env);
 char		*get_cmd_path(simple_com *s);
+int 		unset(simple_com *s);
+int 		export(simple_com *s);
+char 		**create_arg(simple_com *s, char *str);
 void		print(simple_com *s);
 
 #endif

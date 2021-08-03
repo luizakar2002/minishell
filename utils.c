@@ -219,23 +219,51 @@ int	is_builtin(char *com)
 	return (0); // builtin
 }
 
-// char **create_arg(simple_com *s, char *str)
-// {
-// 	int	size;
+char **create_arg(simple_com *s, char *str)
+{
+	int		size;
+	char	**arg;
+	int		i;
 
-// 	size = env_size(s->arg);
-// }
+	i = 0;
+	if (s->arg)
+	{
+		size = env_size(s->arg);
+		arg = malloc(sizeof(char *) * (size + 2));
+		i = -1;
+		while (++i < size)
+		{
+			if (!(arg[i] = malloc(sizeof(char) * (ft_strlen(s->arg[i]) + 1))))
+				error_exit(1);
+			arg[i] = s->arg[i];
+		}
+	}
+	else
+		if (!(arg = malloc(sizeof(char *) * 2)))
+			error_exit(1);
+	if (!(arg[i] = malloc(sizeof(char) * (ft_strlen(str) + 1))))
+		error_exit(1);
+	arg[i] = str;
+	arg[i+1] = NULL;
+	return (arg);
+	//free the other arg
+}
 
 void	print(simple_com *s)
 {
+	int	i;
+
 	while (s->command)
 	{
+		i = 0;
 		printf("command %s\n", s->command);
 		printf("option %s\n", s->option);
-		printf("arg %s\n", s->arg);
-			printf("infile %d\n", s->infile);
-			printf("outfile %d\n", s->outfile);
-			printf("errfile %d\n", s->errfile);
+		if (s->arg)
+			while (s->arg[i])
+				printf("arg %s\n", s->arg[i++]);
+		printf("infile %d\n", s->infile);
+		printf("outfile %d\n", s->outfile);
+		printf("errfile %d\n", s->errfile);
 		printf("\n");
 		++s;
 	}

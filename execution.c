@@ -8,8 +8,8 @@ int	exec_com(simple_com *s, int fd[2])
 	{
 		dup2(s->infile, STDIN_FILENO);
 		dup2(s->outfile, STDOUT_FILENO);
-		if (execve(get_cmd_path(s), merge(s), s->env) == -1)
-			perror("lsh");
+		if (execve(get_cmd_path(s), merge(s), myenv) == -1)
+			ft_putstr_fd("lsh", 2);
 		exit(0);
 	}
 	else 
@@ -80,16 +80,16 @@ int	call_command(simple_com *s)
 {
 	int status;
 
-	if (compare(s->command, "echo"))
-		status = echo(s);
-	else if (compare(s->command, "cd"))
+	// if (compare(s->command, "echo"))
+	// 	status = echo(s);
+	/*else */if (compare(s->command, "cd"))
 		status = changedir(s);
 	else if (compare(s->command, "pwd"))
 		status = pwd(s);
-	// else if (compare(s->command, "export"))
-	// 	status = export(s);
-	// else if (compare(s->command, "unset"))
-	// 	status = unset(s);
+	else if (compare(s->command, "export"))
+		status = export(s);
+	else if (compare(s->command, "unset"))
+		status = unset(s);
 	else if (compare(s->command, "env"))
 		status = print_env(s);
 	else if (compare(s->command, "exit"))
