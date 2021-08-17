@@ -122,20 +122,52 @@ simple_com	*split_pipes(char *str, char **env)
 	return (arr);
 }
 
+void	handle_sigint(int sig)
+{
+	if (sig == SIGINT)
+		ft_putstr_fd("minishell >   \b\b \nminishell > ", 1); 
+	if (sig == SIGQUIT)
+		ft_putstr_fd("minishell >   \b\b
+		
+		
+		", 1);
+}
+// void	main_f()
+// {
+// 	simple_com *s;
+// 	int			n;
+// 	char		*str;
+
+// 	signal(SIGINT, &handle_sigint);
+// 	signal(SIGQUIT, &handle_sigint);
+// 	str = readline("minishell > ");
+// 	// if (!str)
+// 	// 	str = readline("minishell > ");
+// 	add_history(str);
+// 	if (!ft_strncmp(str, "exit", 4))
+// 		return ;
+// 	n = char_count(str, '|') + 1;
+// 	s = split_pipes(str, myenv);
+// 	// print(s);
+// 	exec(s, n);
+// 	free(str);
+// 	return ;
+// }
+
 int	main(int ac, char **av, char **env)
 {
 	simple_com *s;
-	int			i;
 	int			n;
 	char		*str;
-	pid_t		pid;
-	pid_t		wpid;
-	int			status;
 
 	myenv = env;
 	while (1)
 	{
-		str = readline("Supercool Shell > ");
+		signal(SIGINT, &handle_sigint);
+		signal(SIGQUIT, &handle_sigint);
+		str = readline("minishell > ");
+		if (!str)
+			str = readline("minishell > ");
 		add_history(str);
 		if (!ft_strncmp(str, "exit", 4))
 			break ;
@@ -145,46 +177,5 @@ int	main(int ac, char **av, char **env)
 		exec(s, n);
 		free(str);
 	}
-	// close(s->outfile);
-	// close(s->infile);
-	// close(s->errfile);
-	// while (ft_strncmp(str, "exit", 4))
-	// {
-	// 	str = readline(NULL);
-	// 	n = char_count(str, '|') + 1;
-	// 	s = split_pipes(str, env);
-	// 	exec(s, n);
-	// }
-	//open files
-	// while (pid != 0)
-	// 	pid = fork();
-	// 	if (pid == 0)
-	// 		func()
-	// 	if(pid != 0) 
-	// 		waitpid(pid);
-	// exec(s, n);
-	// char *const parmList[] = {"ls", "-l", "-a", (char *)0};
-    // char *const envParms[2] = {"PATH=/bin", (char*)0};
-	// char *args[] = {s->command, "-l", (char *)0};
-	// char *env_args[] = {"PATH=/bin", (char*)0};
-	// pid = fork();
-	// if (pid == 0)
-	// {
-	// 	execve(args[0], args, env_args);
-	// 	printf("ERROR\n");
-	// 	// if (execve(parmList[0], parmList, envParms) == -1)
-	// 	// 	perror("lsh");
-	// 	// exit(EXIT_FAILURE);
-	// }
-	// else
-	// {
-	// 	wait(NULL);
-	// 	printf("success\n");
-	// 	// do
-	// 	// {
-	// 	// 	wpid = waitpid(pid, &status, WUNTRACED);
-	// 	// }
-	// 	// while(!WIFEXITED(status) && !WIFSIGNALED(status));
-	//}
 	return (0);
 }

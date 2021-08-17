@@ -54,6 +54,7 @@ char		*get_cmd_path(simple_com *s);
 int 		unset(simple_com *s);
 int 		export(simple_com *s);
 char 		**create_arg(simple_com *s, char *str);
+void		main_f();
 void		print(simple_com *s);
 
 #endif

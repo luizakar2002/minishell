@@ -66,3 +66,13 @@ int env_size(char **env)
 		size++;
 	return (size);
 }
+
+void	free_2d(char **arr)
+{
+	int	i;
+
+	i = 0;
+	while (arr[i])
+		free(arr[i++]);
+	free(arr);
+}
