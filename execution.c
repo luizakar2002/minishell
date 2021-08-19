@@ -1,6 +1,6 @@
 #include "minishell.h"
 
-int	exec_com(simple_com *s, int fd[2])
+int	exec_com(simple_com *s, int fd[2], t_env *e)
 {
 	int status;
 
@@ -8,19 +8,19 @@ int	exec_com(simple_com *s, int fd[2])
 	{
 		dup2(s->infile, STDIN_FILENO);
 		dup2(s->outfile, STDOUT_FILENO);
-		if (execve(get_cmd_path(s), merge(s), myenv) == -1)
+		if (execve(get_cmd_path(s, e), merge(s), e->myenv) == -1)
 			ft_putstr_fd("lsh", 2);
 		exit(0);
 	}
 	else 
 	{
-		status = call_command(s);
+		status = call_command(s, e);
 		exit(0);
 	}
 	return (0);
 }
 
-void	exec(simple_com *s, int n)
+void	exec(simple_com *s, int n, t_env *e)
 {
 	int 	i;
 	int		j;
@@ -30,7 +30,7 @@ void	exec(simple_com *s, int n)
 
 	if (n == 1 && !is_builtin(s->command))
 	{
-		call_command(s);
+		call_command(s, e);
 		return ;
 	}
 	i = 0;
@@ -65,33 +65,34 @@ void	exec(simple_com *s, int n)
 				s[i].outfile = fd[i + 1][1];
 			if (s[i].infile == 0 && i != 0)
 				s[i].infile = fd[i][0];
-			exec_com(&s[i], fd[i]);	
+			exec_com(&s[i], fd[i], e);	
 		}
 		else
 		{
 			waitpid(pids[i], NULL, 0);
 			close(fd[i + 1][1]);
+			close(fd[i][0]);
 		}
 		i++;
 	}
 }
 
-int	call_command(simple_com *s)
+int	call_command(simple_com *s, t_env *e)
 {
 	int status;
 
 	// if (compare(s->command, "echo"))
 	// 	status = echo(s);
 	/*else */if (compare(s->command, "cd"))
-		status = changedir(s);
+		status = changedir(s, e);
 	else if (compare(s->command, "pwd"))
 		status = pwd(s);
 	else if (compare(s->command, "export"))
-		status = export(s);
+		status = export(s, e);
 	else if (compare(s->command, "unset"))
-		status = unset(s);
+		status = unset(s, e);
 	else if (compare(s->command, "env"))
-		status = print_env(s);
+		status = print_env(s, e);
 	else if (compare(s->command, "exit"))
 		exit(0);
 	return (status);
