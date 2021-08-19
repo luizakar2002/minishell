@@ -125,57 +125,15 @@ simple_com	*split_pipes(char *str, char **env)
 void	handle_sigint(int sig)
 {
 	if (sig == SIGINT)
-		ft_putstr_fd("minishell >   \b\b \nminishell > ", 1); 
-	if (sig == SIGQUIT)
-		ft_putstr_fd("minishell >   \b\b
-		
-		
-		", 1);
-}
-// void	main_f()
-// {
-// 	simple_com *s;
-// 	int			n;
-// 	char		*str;
-
-// 	signal(SIGINT, &handle_sigint);
-// 	signal(SIGQUIT, &handle_sigint);
-// 	str = readline("minishell > ");
-// 	// if (!str)
-// 	// 	str = readline("minishell > ");
-// 	add_history(str);
-// 	if (!ft_strncmp(str, "exit", 4))
-// 		return ;
-// 	n = char_count(str, '|') + 1;
-// 	s = split_pipes(str, myenv);
-// 	// print(s);
-// 	exec(s, n);
-// 	free(str);
-// 	return ;
-// }
-
-int	main(int ac, char **av, char **env)
-{
-	simple_com *s;
-	int			n;
-	char		*str;
-
-	myenv = env;
-	while (1)
 	{
-		signal(SIGINT, &handle_sigint);
-		signal(SIGQUIT, &handle_sigint);
-		str = readline("minishell > ");
-		if (!str)
-			str = readline("minishell > ");
-		add_history(str);
-		if (!ft_strncmp(str, "exit", 4))
-			break ;
-		n = char_count(str, '|') + 1;
-		s = split_pipes(str, env);
-		// print(s);
-		exec(s, n);
-		free(str);
+		struct termios term;
+		tcgetattr(0, &term);
+		term.c_lflag &= ~ECHO;
+		term.c_lflag &= ~ECHOCTL;
+		term.c_lflag |= ECHO;
+		tcsetattr(0, TCSANOW, &term);
+		ft_putstr_fd("\nminishell > ", 1);
 	}
-	return (0);
+	if (sig == SIGQUIT)
+		ft_putstr_fd("minishell > ", 1);
 }

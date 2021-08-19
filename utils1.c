@@ -22,7 +22,7 @@ char	**merge(simple_com *s)
 	return (r);
 }
 
-char *get_cmd_path(simple_com *s)
+char *get_cmd_path(simple_com *s, t_env *e)
 {
     int i = 0;
     char *command;
@@ -30,9 +30,9 @@ char *get_cmd_path(simple_com *s)
     int fd;
 	char	**paths;
 
-	while (myenv[i] && ft_strncmp(myenv[i], "PATH=", 5))
+	while (e->myenv[i] && ft_strncmp(e->myenv[i], "PATH=", 5))
 		++i;
-	paths = ft_split(myenv[i], ':');
+	paths = ft_split(e->myenv[i], ':');
     if (ft_strchr(s->command, '/'))
 		return (s->command);
 	i = -1;
