@@ -21,7 +21,6 @@ typedef struct s_str
 	int		infile;
 	int		outfile;
 	int		errfile;
-	// char	**env;
 	//keep status
 }				simple_com;
 
