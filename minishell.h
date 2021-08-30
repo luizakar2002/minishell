@@ -8,11 +8,13 @@
 # include <termios.h>
 # include <stdio.h>
 # include <fcntl.h>
+# include <errno.h>
 # include "libft/libft.h"
 # include <readline/readline.h>
 # include <readline/history.h>
 
-///define errors
+int status;
+
 typedef struct s_str
 {
 	char	*command;
@@ -20,8 +22,7 @@ typedef struct s_str
 	char	**arg;
 	int		infile;
 	int		outfile;
-	int		errfile;
-	//keep status
+	int		stat;
 }				simple_com;
 
 typedef struct env
@@ -32,16 +33,17 @@ typedef struct env
 //main.c
 
 //builtin.c
-int changedir(simple_com *s, t_env *e);
-int pwd(simple_com *s);
-int print_env(simple_com *s, t_env *e);
-int export(simple_com *s, t_env *e);
-int unset(simple_com *s, t_env *e);
+int changedir(simple_com *s, t_env *e, int ex);
+int pwd(simple_com *s, int ex);
+int print_env(simple_com *s, t_env *e, int flag, int ex);
+int export(simple_com *s, t_env *e, int ex);
+int unset(simple_com *s, t_env *e, int ex);
+int	echo(simple_com *s, int ex);
 
 //execution.c
-int		exec_com(simple_com *s, int fd[2], t_env *e);
+int		exec_com(simple_com *s, t_env *e);
 void	exec(simple_com *s, int n, t_env *e);
-int		call_command(simple_com *s, t_env *e);
+int		call_command(simple_com *s, t_env *e, int ex);
 
 //utils.c
 int		char_count(char *str, char c);
@@ -52,23 +54,34 @@ void	fill_fd(int *arr, char *str, int flag);
 char	*add_front(char *str, char c);
 int		compare(char *s1, char *s2);
 int		special_char(char *str);
-char	*remove_quote(char *str);
 int		is_builtin(char *com);
 char 	**create_arg(simple_com *s, char *str);
 void	print(simple_com *s);
 int		check(char *str, simple_com *s);
 
 //utils1.c
+int		is_redir(char *s);
+char	*redir(char *str);
 char	**merge(simple_com *s);
+char	*remove_quote(char *str, t_env *e);
 char 	*get_cmd_path(simple_com *s, t_env *e);
 int 	env_size(char **env);
+char 	*get_env(char *key, t_env *e);
+char 	**update_env(t_env *e);
+char 	*parse_com(char *com);
 void	free_2d(char **arr);
 
+
+//utils2.c
+int		check_export(char *arg);
+
 //lex.c
-simple_com	*init_simple_com(simple_com *s, char *str, char **env);
-char		*token(char *str, simple_com *s);
-simple_com	*fill_struct(char *str, char **env);
-simple_com	*split_pipes(char *str, char **env);
+simple_com	*init_simple_com(simple_com *s);
+void		token(char *str, simple_com *s);
+simple_com	*fill_struct(char *str, t_env *env);
+simple_com	*split_pipes(char *str, t_env *env);
+// void 		handle_child(int sig);
 void		handle_sigint(int sig);
+char		**divide(char *s);
 
 #endif

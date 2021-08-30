@@ -1,105 +1,148 @@
 #include "minishell.h"
 
-simple_com	*init_simple_com(simple_com *s, char *str, char **env)
+simple_com	*init_simple_com(simple_com *s)
 {
 	s = malloc(sizeof(simple_com));
 	if (!s)
-		error_exit(1);
+		error_exit(5);
 	s->command = NULL;
 	s->option = NULL;
 	s->arg = NULL;
 	s->infile = 0;
 	s->outfile = 1;
-	s->errfile = 2;
 	return (s);
 }
 
-char	*token(char *str, simple_com *s)
+void	token(char *str, simple_com *s)
 {
 	int			len;
 	int			i;
 	int			j;
-	int			start;
-	char		*token;
-	static int	c;
-	char		ch;
-	char		redir;
 
 	i = 0;
 	j = 0;
 	len = 0;
-	redir = '.';
-	while (str[i] && ft_isspace(str[i]))
-		i++;
-	if (str[i] == '<' || str[i] == '>' || (str[i] == '2' && str[i+1] == '>') || (str[i] == '>' && str[i+1] == '>'))
-	{
-		redir = str[i];
-		i++;
-		while (str[i] && ft_isspace(str[i]))
-			i++;
-		if (str[i] == '"' || str[i] == '\'')
-		{
-			ch = str[i];
-			i++;
-			start = i;
-			while (str[i] && str[i] != ch)
-			{
-				i++;
-				len++;
-			}
-			i++;
-		}
-		else
-		{
-			start = i;
-			while (str[i] && !ft_isspace(str[i]))
-			{
-				i++;
-				len++;
-			}
-		}
-	}
-	else
-	{
-		start = i;
-		while (str[i] && !ft_isspace(str[i]))
-		{
-			i++;
-			len++;
-		}
-	}
-	token = ft_substr(str, start, len);
-	if (redir != '.')
-		token = add_front(token, redir);
-	token = remove_quote(token);
-	if (check(token, s) == 1)
-		s->command = token;
-	else if (check(token, s) == 2)
-		s->option = token;
-	else if (check(token, s) == 3)
-		s->arg = create_arg(s, token);
-	else if (check(token, s) == 4)
-		fill_fd(&s->infile, token + 1, 4);
-	else if (check(token, s) == 5)
-		fill_fd(&s->outfile, token + 1, 5);
-	else if (check(token, s) == 6)
-		fill_fd(&s->errfile, token + 2, 6);
-	else if (check(token, s) == 7)
-		fill_fd(&s->outfile, token + 2, 7);
-	return (str + i);
+	if (check(str, s) == 1)
+		s->command = str;
+	else if (check(str, s) == 8)
+		s->command = str + 1;
+	else if (check(str, s) == 9)
+		s->arg = create_arg(s, str + 1);
+	else if (check(str, s) == 2)
+		s->option = str;
+	else if (check(str, s) == 3)
+		s->arg = create_arg(s, str);
+	else if (check(str, s) == 4)
+		fill_fd(&s->infile, str + 1, 4);
+	else if (check(str, s) == 5)
+		fill_fd(&s->outfile, str + 1, 5);
+	else if (check(str, s) == 7)
+		fill_fd(&s->outfile, str + 2, 7);
 }
 
-simple_com	*fill_struct(char *str, char **env)
+char	**divide(char *s)
+{
+	int		i;
+	int		j;
+	int		si;
+	int		d;
+	int		len;	
+	int		word_cnt;
+	char	**words;
+	char	**w;
+	char	*redi;
+
+	w = NULL;
+	s = ft_strtrim(s, " ");
+	word_cnt = char_count(s, ' ');
+	if (!s || !(words = (char **)malloc(sizeof(char *) * (word_cnt + 2))))
+		error_exit(5);
+	i = 0;
+	j = 0;
+	d = -1;
+	si = -1;
+	len = 0;
+	redi = NULL;
+	while (s[i])
+	{
+		if (s[i] && s[i] == '"')
+		{
+			d *= -1;
+			len++;
+		}
+		else if (s[i] && s[i] == '\'')
+		{
+			si *= -1;
+			len++;
+		}
+		else if (s[i] && ft_isspace(s[i]))
+		{
+			if (d == -1 && si == -1)
+			{
+				if (redi)
+				{
+					words[j++] = ft_strjoin(redi, ft_substr(s, i - len, len));
+					redi = NULL;
+				}
+				else
+					words[j++] = ft_substr(s, i - len, len);	
+				len = 0;
+				while (s[i] && ft_isspace(s[i]))
+					i++;
+				continue ;
+			}
+			else
+				len++;
+		}
+		else if (redir(s + i) && d == -1 && si == -1)
+		{
+			redi = redir(s + i);
+			i += ft_strlen(redi);
+			while (s[i] && ft_isspace(s[i]))
+				i++;
+			i--;
+			len = 0;
+		}
+		else
+			len++;
+		i++;
+	}
+	if (redi)
+		words[j++] = ft_strjoin(redi, ft_substr(s, i - len, len));
+	else
+		words[j++] = ft_substr(s, i - len, len);
+	words[j] = 0;
+	if (!s || !(w = (char **)malloc(sizeof(char *) * (j + 1))))
+		error_exit(5);
+	w[j] = 0;
+	i = 0;
+	while (i < j)
+	{
+		w[i] = ft_strdup(words[i]);
+		i++;
+	}
+	free_2d(words);
+	return (w);
+}
+
+simple_com	*fill_struct(char *str, t_env *env)
 {
 	simple_com	*s;
+	char		**div;
+	int			i;
+	char		*ss;
 
-	s = init_simple_com(s, str, env);
-	while (*str)
-		str = token(str, s);
+	s = NULL;
+	ss = NULL;
+	s = init_simple_com(s);
+	div = divide(str);
+	i = -1;
+	while (div[++i])
+		token(remove_quote(div[i], env), s);
 	return (s);
 }
 
-simple_com	*split_pipes(char *str, char **env)
+simple_com	*split_pipes(char *str, t_env *env)
 {
 	char 		**tab;
 	simple_com	*arr;
@@ -108,32 +151,31 @@ simple_com	*split_pipes(char *str, char **env)
 	tab = ft_split(str, '|');
 	arr = malloc(sizeof(simple_com) * (char_count(str, '|') + 2));
 	if (!arr)
-		exit(1);
+		error_exit(5);
 	i = 0;
 	while (i < (char_count(str, '|') + 1))
 	{
 		arr[i] = *fill_struct(tab[i], env);
 		++i;
 	}
-	//i++;
 	arr[i] = (simple_com) {.command = NULL, .option = NULL, .arg = NULL};
-	// if (open_files())
-	// 	exit(2);
 	return (arr);
 }
 
 void	handle_sigint(int sig)
 {
-	if (sig == SIGINT)
-	{
-		struct termios term;
-		tcgetattr(0, &term);
+	struct termios term;
+
+	tcgetattr(0, &term);
 		term.c_lflag &= ~ECHO;
 		term.c_lflag &= ~ECHOCTL;
 		term.c_lflag |= ECHO;
-		tcsetattr(0, TCSANOW, &term);
-		ft_putstr_fd("\nminishell > ", 1);
+	tcsetattr(0, TCSANOW, &term);
+	if (sig == SIGINT)
+	{
+		write(1, "\n", 1);
+		rl_on_new_line();
+		rl_replace_line("", 0);
+		rl_redisplay();
 	}
-	if (sig == SIGQUIT)
-		ft_putstr_fd("minishell > ", 1);
 }

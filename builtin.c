@@ -1,96 +1,178 @@
 #include "minishell.h"
 
-// int	echo(simple_com *s)
-// {
-// 	write(s->outfile, s->arg, ft_strlen(s->arg));
-// 	return (0);
-// }
-
-int changedir(simple_com *s, t_env *e)
+int	echo(simple_com *s, int ex)
 {
 	int i;
+
+	i = -1;
+	while (s->arg[++i])
+	{
+		write(s->outfile, s->arg[i], ft_strlen(s->arg[i]));
+		write(s->outfile, " ", 1);
+	}
+	if (!s->option)
+		write(s->outfile, "\n", 1);
+	if (ex == 0)
+		error_exit(0);
+	return (0);
+}
+
+int changedir(simple_com *s, t_env *e, int ex) 
+{
+	int 	i;
+	char	*temp;
 
 	i = 0;
 	if (!s->arg)
 	{
-		while (e->myenv[i] && ft_strncmp(e->myenv[i], "HOME=", 5))
-			++i;
-		if (chdir(e->myenv[i] + 5))
-			ft_putstr_fd("Not changed\n", 2);
+		if (get_env("HOME", e))
+		{
+			if (chdir(get_env("HOME", e)))
+				error_exit(3);
+		}
+		else
+			error_exit(6);
+	}
+	else if (s->arg[0][0] == '-')
+	{
+		if (get_env("OLDPWD", e))
+		{
+			if (chdir(get_env("OLDPWD", e)))
+				error_exit(3);
+		}
+		else
+			error_exit(5);
 	}
 	else
 	{
 		if (ft_strchr(s->arg[0], '/'))
 		{
 			if (chdir(s->arg[0]))
-				ft_putstr_fd("Not changed\n", 2);
+				error_exit(3);
 		}
 		else
 		{
 			while (e->myenv[i] && ft_strncmp(e->myenv[i], "PWD=", 4))
 				++i;
-			if (chdir(ft_strjoin(ft_strjoin(e->myenv[i] + 4, "/"), s->arg[0])))
-				ft_putstr_fd("Not changed\n", 2);
+			temp = ft_strjoin(ft_strjoin(e->myenv[i] + 4, "/"), s->arg[0]);
+			if (chdir(temp))
+			{
+				free(temp);
+				error_exit(3);
+			}
+			free(temp);
 		}
 	}
+	e->myenv = update_env(e);
+	if (ex == 1)
+		error_exit(0);
     return (0);
-	//-----------------------------------------update env 
 }
 
-int pwd(simple_com *s)
+int pwd(simple_com *s, int ex)
 {
 	char *path;
 
 	path = malloc(sizeof(char) * 1000);
-	getcwd(path, 1000);
+	if (!getcwd(path, 1000))
+		error_exit (3);
 	ft_putendl_fd(path, s->outfile);
+
+	if (ex == 1)
+	{
+		error_exit(0);
+	}
 	return (0);
 }
 
-int print_env(simple_com *s, t_env *e)
+int print_env(simple_com *s, t_env *e, int flag, int ex)
 {
-	int	i;
+	int		i;
+	char	*key;
 
 	i = 0;
 	while (e->myenv[i])
-		ft_putendl_fd(e->myenv[i++], s->outfile);
+	{
+		key = ft_substr(e->myenv[i], 0, ft_strlen(e->myenv[i]) - ft_strlen(ft_strchr(e->myenv[i], '=')));
+		if (flag == 0 && get_env(key, e) && get_env(key, e)[0] == '\0');
+		else
+			ft_putendl_fd(e->myenv[i], s->outfile);
+		++i;
+	}
+	if (ex == 1)
+		error_exit(0);
 	return (0);
 }
 
-int export(simple_com *s, t_env *e)
+int export(simple_com *s, t_env *e, int ex)
 {
 	int		size;
 	char	**newenv;
-	int		i;
 	int		j;
-	int		k;
+	int		m;
+	char	*key;
+	char	*temp;
 
-	size = env_size(e->myenv) + 1;
-	while (i < size - 2)
-		++i;
-	size += env_size(s->arg);
-	newenv = malloc(sizeof(char *) * size);
-	if (!newenv)
-		error_exit(1);
-	j = -1;
-	while (++j < i)
+	m = 0;
+	if (!s->arg)
 	{
-		newenv[j] = ft_strdup(e->myenv[j]);
+		print_env(s, e, 1, ex);
 	}
-	k = 0;
-	while (s->arg[k])
+	else
 	{
-		newenv[j++] = ft_strdup(s->arg[k++]);		
+		while (s->arg[m])
+		{
+			if (check_export(s->arg[m]))
+			{
+				key = ft_substr(s->arg[m], 0, ft_strlen(s->arg[m])  - ft_strlen(ft_strchr(s->arg[m], '=')));
+				if (get_env(key, e) != NULL)
+				{
+					j = 0;
+					while (e->myenv[j])
+					{
+						if (ft_strncmp(key, e->myenv[j], ft_strlen(key)) == 0)
+						{
+							free(e->myenv[j]);
+							e->myenv[j] = ft_strdup(s->arg[m]);
+						}
+						++j;
+					}
+				}
+				else
+				{
+					size = env_size(e->myenv);
+					newenv = malloc(sizeof(char *) * (size + 2));
+					if (!newenv)
+						error_exit(1);
+					j = 0;
+					while (j < size - 1)
+					{
+						newenv[j] = ft_strdup(e->myenv[j]);
+						++j;
+					}
+					if (!ft_strchr(s->arg[m], '='))
+					{
+						temp = ft_strjoin(s->arg[m], "=");
+						newenv[j++] = ft_strdup(temp);	
+						free(temp);
+					}
+					else
+						newenv[j++] = ft_strdup(s->arg[m]);	
+					newenv[j] = ft_strdup(e->myenv[size - 1]);
+					newenv[j + 1] = NULL;
+					free_2d(e->myenv);
+					e->myenv = newenv;
+				}
+			}
+			++m;
+		}
 	}
-	newenv[j] = ft_strdup(e->myenv[i]);
-	newenv[j + 1] = NULL;
-	free_2d(e->myenv);
-	e->myenv = newenv;
-	print_env(s, e);
+	if (ex == 1)
+		error_exit(0);
 	return (0);
 }
 
-int unset(simple_com *s, t_env *e)
+int unset(simple_com *s, t_env *e, int ex)
 {
 	int		size;
 	char	**newenv;
@@ -117,8 +199,8 @@ int unset(simple_com *s, t_env *e)
 	newenv[j] = NULL;
 	free_2d(e->myenv);
 	e->myenv = newenv;
-	// print_env(s);
+	if (ex == 1)
+		error_exit(0);
 	return (0);
-	//free old env
 }
 

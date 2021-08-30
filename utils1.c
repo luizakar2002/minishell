@@ -9,9 +9,12 @@ char	**merge(simple_com *s)
 
 	i = 0;
 	j = 0;
+	size = 0;
 	if (s->option)
 		++size;
 	r = malloc(sizeof(char *) * size);
+	if (!r)
+		error_exit(5);
 	r[i++] = s->command;
 	if (s->option)
 		r[i++] = s->option;
@@ -45,13 +48,13 @@ char *get_cmd_path(simple_com *s, t_env *e)
         {
             close(fd);
             free(command);
-			//free paths
+			free_2d(paths);
             return(path);
         }
         free(command);
         free(path);
     }
-    //exit_message(data, "Commmand not found\n", EXIT_FAILURE);
+    exit(127);
     return (NULL);
 }
 
@@ -75,4 +78,190 @@ void	free_2d(char **arr)
 	while (arr[i])
 		free(arr[i++]);
 	free(arr);
+}
+
+char **update_env(t_env *e)
+{
+	char	*temp;
+	char	*path;
+	int		i;
+
+	path = malloc(sizeof(char) * 1000);
+	if (!path)
+		error_exit(5);
+	if (!getcwd(path, 1000))
+		error_exit (3);
+	i = 0;
+	temp = get_env("PWD", e);
+	i = 0;
+	while (e->myenv[i])
+	{
+		if (ft_strncmp("PWD=", e->myenv[i], 4) == 0)
+		{
+			free(e->myenv[i]);
+			e->myenv[i] = ft_strdup(ft_strjoin("PWD=", path));
+		}
+		else if (ft_strncmp("OLDPWD=", e->myenv[i], 7) == 0)
+		{
+			free(e->myenv[i]);
+			e->myenv[i] = ft_strdup(ft_strjoin("OLDPWD=", temp));
+		}
+		++i;
+	}
+	return (e->myenv);
+}
+
+char *get_env(char *key, t_env *e)
+{
+	int		i;
+	char	*temp;
+
+	i = 0;
+	if (key[0] == '?')
+		return (ft_itoa(status));
+	temp = ft_strjoin(key, "=");
+	while (e->myenv[i])
+	{
+		if (ft_strncmp(temp, e->myenv[i], ft_strlen(temp)) == 0)
+		{
+			free(temp);
+			if (*(e->myenv[i] + ft_strlen(temp)) == '\0')
+				return ("");
+			return (e->myenv[i] + ft_strlen(temp));
+		}
+		++i;
+	}
+	free(temp);
+	return (NULL);
+}
+
+// char *parse_com(char *com)
+// {
+// 	char	*s;
+// 	int		s;
+// 	int		d;
+
+	
+// }
+
+char	*redir(char *str)
+{
+	char 	*s;
+	int		len;
+
+	if (str[0] && (str[0] == '<' || str[0] == '>'))
+		len = 2;
+	else if (str[0] && str[1] && ((str[0] == '2' && str[1] == '>') || (str[0] == '>' && str[1] == '>') || (str[0] == '<' && str[1] == '<')))
+		len = 3;
+	else
+		return (NULL);
+	s = malloc(sizeof(char) * len);
+	if (!s)
+		error_exit(5);
+	if (len == 2)
+		s[0] = str[0];
+	else if (len == 3)
+	{
+		s[0] = str[0];
+		s[1] = str[1];
+	}
+	s[len - 1] = 0;
+	return (s);
+}
+
+char *remove_quote(char *str, t_env *e)
+{
+	char 	*s;
+	char	*s1;
+	int		flag;
+	int 	len;
+	int		qmark;
+	int		q;
+	int		q1;
+	int		i;
+	char 	*j;
+
+	j = malloc(sizeof(char) * 2);
+	if (!j)
+		error_exit(5);
+	j[1] = '\0';
+	i = 0;
+	q = -1;
+	q1 = -1;
+	s = "";
+	flag = 0;
+	qmark = -1;
+	while (str[i])
+	{
+		if (str[i] && str[i] == '"' && q1 == -1)
+			q *= -1;
+		else if (str[i] && str[i] == '\'' && q == -1)
+			q1 *= -1;
+		else if (str[i] && str[i] == '$' && q1 == -1)
+		{
+			len = 0;
+			i++;
+			qmark = i;
+			while (str[i] && (str[i] != ' ' || str[i] != '\'' || str[i] != '"'))
+			{
+				len++;
+				i++;
+			}
+			if (str[qmark] == '?')
+			{
+				i = qmark;
+				i++;
+				len = 1;
+			}
+			if (len == 0)
+			{
+				j[0] = str[i - 1];
+				s = ft_strjoin(s, j);
+			}
+			else
+			{
+				if (!get_env(ft_substr(str, i - len, len), e))
+					s = ft_strjoin(s, "");
+				else
+					s = ft_strjoin(s, get_env(ft_substr(str, i - len, len), e));
+				if (qmark != -1)
+					i--;
+			}
+		}
+		else
+		{
+			j[0] = str[i];
+			s = ft_strjoin(s, j); // free in strjoin
+		}
+		if (is_redir(str + i) && (q == 1 || q1 == 1))
+			flag = 1;
+		i++;
+	}
+	free(j);
+	if (flag == 1)
+	{
+		i = 0;
+		s1 = malloc((ft_strlen(s) + 2) * sizeof(char));
+		if (!s1)
+			error_exit(5);
+		s1[i] = 2;
+		while (s[i])
+		{
+			s1[i + 1] = s[i];
+			i++;
+		}
+		i++;
+		s1[i] = 0;
+		free(s);
+		return (s1);
+	}
+	return (s);
+}
+
+int		is_redir(char *s)
+{
+	if (s[0] == '>' || s[0] == '<' || (s[0] == '2' && s[1] == '>')
+		|| (s[0] == '>' && s[1] == '>') || (s[0] == '<' && s[1] == '<'))
+		return (1);
+	return (0);
 }
