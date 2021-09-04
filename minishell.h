@@ -15,8 +15,6 @@
 
 int status;
 
-int	parentid;
-
 typedef struct s_str
 {
 	char	*command;

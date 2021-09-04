@@ -8,7 +8,6 @@ int	main(int ac, char **av, char **env)
 	int			i;
 	t_env		*e;
 
-	parentid = getpid();
 	status = 0;
 	if (ac != 1 || av[1] != NULL)
 		return (0);
