@@ -15,6 +15,8 @@
 
 int status;
 
+int	parentid;
+
 typedef struct s_str
 {
 	char	*command;
@@ -23,6 +25,8 @@ typedef struct s_str
 	int		infile;
 	int		outfile;
 	int		stat;
+	char	**dlm;
+	int		herdoc;
 }				simple_com;
 
 typedef struct env
@@ -43,7 +47,7 @@ int	echo(simple_com *s, int ex);
 //execution.c
 int		exec_com(simple_com *s, t_env *e);
 void	exec(simple_com *s, int n, t_env *e);
-int		call_command(simple_com *s, t_env *e, int ex);
+void	call_command(simple_com *s, t_env *e, int ex);
 
 //utils.c
 int		char_count(char *str, char c);
@@ -55,7 +59,7 @@ char	*add_front(char *str, char c);
 int		compare(char *s1, char *s2);
 int		special_char(char *str);
 int		is_builtin(char *com);
-char 	**create_arg(simple_com *s, char *str);
+char 	**create_arg(char **s, char *str, int flag);
 void	print(simple_com *s);
 int		check(char *str, simple_com *s);
 
@@ -74,6 +78,10 @@ void	free_2d(char **arr);
 
 //utils2.c
 int		check_export(char *arg);
+int		heredoc(simple_com *s, t_env *e);
+char	*parse_heredoc(char *str, t_env *e);
+void	free_coms(simple_com *s);
+int		is_valid(char *str);
 
 //lex.c
 simple_com	*init_simple_com(simple_com *s);

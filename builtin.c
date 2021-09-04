@@ -5,14 +5,20 @@ int	echo(simple_com *s, int ex)
 	int i;
 
 	i = -1;
+	if (!(s->arg))
+	{
+		write(s->outfile, "\n", 1);
+		return (0);
+	}
 	while (s->arg[++i])
 	{
 		write(s->outfile, s->arg[i], ft_strlen(s->arg[i]));
-		write(s->outfile, " ", 1);
+		if (s->arg[i + 1] != NULL)
+			write(s->outfile, " ", 1);
 	}
 	if (!s->option)
 		write(s->outfile, "\n", 1);
-	if (ex == 0)
+	if (ex == 1)
 		error_exit(0);
 	return (0);
 }
@@ -28,37 +34,59 @@ int changedir(simple_com *s, t_env *e, int ex)
 		if (get_env("HOME", e))
 		{
 			if (chdir(get_env("HOME", e)))
-				error_exit(3);
+			{
+				if (ex == 1)
+					error_exit(3);
+    			return (1);
+			}
 		}
 		else
-			error_exit(6);
+		{
+			if (ex == 1)
+				error_exit(6);
+			return (1);			
+		}
 	}
 	else if (s->arg[0][0] == '-')
 	{
 		if (get_env("OLDPWD", e))
 		{
 			if (chdir(get_env("OLDPWD", e)))
-				error_exit(3);
+			{
+				if (ex == 1)
+					error_exit(3);
+    			return (1);
+			}
 		}
 		else
-			error_exit(5);
+		{
+			if (ex == 1)
+				error_exit(3);
+			return (1);
+		}
 	}
 	else
 	{
 		if (ft_strchr(s->arg[0], '/'))
 		{
 			if (chdir(s->arg[0]))
-				error_exit(3);
+			{
+				if (ex == 1)
+					error_exit(3);
+    			return (1);
+			}
 		}
 		else
 		{
 			while (e->myenv[i] && ft_strncmp(e->myenv[i], "PWD=", 4))
 				++i;
-			temp = ft_strjoin(ft_strjoin(e->myenv[i] + 4, "/"), s->arg[0]);
+			temp = ft_strjoin(ft_strjoin(e->myenv[i] + 4, "/", 0), s->arg[0], 0);
 			if (chdir(temp))
 			{
 				free(temp);
-				error_exit(3);
+				if (ex == 1)
+					error_exit(3);
+    			return (1);
 			}
 			free(temp);
 		}
@@ -75,13 +103,15 @@ int pwd(simple_com *s, int ex)
 
 	path = malloc(sizeof(char) * 1000);
 	if (!getcwd(path, 1000))
-		error_exit (3);
+	{
+		if (ex == 1)
+			error_exit(3);
+		return (1);
+	}
 	ft_putendl_fd(path, s->outfile);
 
 	if (ex == 1)
-	{
 		error_exit(0);
-	}
 	return (0);
 }
 
@@ -112,8 +142,10 @@ int export(simple_com *s, t_env *e, int ex)
 	int		m;
 	char	*key;
 	char	*temp;
+	int		flag;
 
 	m = 0;
+	flag = 0;
 	if (!s->arg)
 	{
 		print_env(s, e, 1, ex);
@@ -143,7 +175,11 @@ int export(simple_com *s, t_env *e, int ex)
 					size = env_size(e->myenv);
 					newenv = malloc(sizeof(char *) * (size + 2));
 					if (!newenv)
-						error_exit(1);
+					{
+						if (ex == 1)
+							error_exit(1);
+						return (1);
+					}
 					j = 0;
 					while (j < size - 1)
 					{
@@ -152,7 +188,7 @@ int export(simple_com *s, t_env *e, int ex)
 					}
 					if (!ft_strchr(s->arg[m], '='))
 					{
-						temp = ft_strjoin(s->arg[m], "=");
+						temp = ft_strjoin(s->arg[m], "=", 0);
 						newenv[j++] = ft_strdup(temp);	
 						free(temp);
 					}
@@ -164,8 +200,16 @@ int export(simple_com *s, t_env *e, int ex)
 					e->myenv = newenv;
 				}
 			}
+			else
+				flag = 1;
 			++m;
 		}
+	}
+	if (flag == 1)
+	{
+		if (ex == 1)
+			error_exit(1);
+		return (1);		
 	}
 	if (ex == 1)
 		error_exit(0);
@@ -183,7 +227,11 @@ int unset(simple_com *s, t_env *e, int ex)
 	size = env_size(e->myenv) + 1;
 	size -= env_size(s->arg);
 	if (!(newenv = malloc(sizeof(char *) * size)))
-		error_exit(1);
+	{
+		if (ex == 1)
+			error_exit(1);
+		return (1);
+	}
 	i = -1;
 	j = 0;
 	while (++i < env_size(e->myenv))

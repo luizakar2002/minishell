@@ -30,37 +30,41 @@ void	error_exit(int error)
 {
 	if (error == 1)
 	{
-		printf("Error\n");
+		write(2, "Error\n", 7);
 		exit(1);
 	}
 	else if (error == 127)
 	{
-		printf("Command not found\n");
+		write(2, "Command not found\n", 18);
 		exit(127);
 	}
 	else if (error == 126)
 	{
-		printf("Unable to execute command\n");
+		write(2, "Unable to execute command\n", 26);
 		exit(126);
 	}
 	else if (error == 3)
 	{
-		printf("Wrong path\n");
+		write(2, "Wrong path\n", 11);
 		exit(1);
 	}
 	else if (error == 4)
 	{
-		printf("Syntax error\n");
-		exit(1);
+		write(2, "Syntax error\n", 13);
+		exit(258);
 	}
 	else if (error == 5)
 	{
-		printf("malloc:: Not enough space\n");
+		write(2, "malloc:: Not enough space\n", 26);
 		exit(1);
 	}
-	else if (error == 0)
-		// dprintf(2, "everything is fine!\n");
-		exit(0);
+	else if (error == 2)
+	{
+		status = 1;
+		write(2, "No such file or directory\n", 26);
+		exit(2);
+	}
+	exit(0);
 }
 
 int	check(char *str, simple_com *s)
@@ -79,12 +83,14 @@ int	check(char *str, simple_com *s)
 		else if (str)
 			return (9);
 	}
-	if (str && str[0] == '<')
+	if (str && str[1] && str[0] == '>' && str[1] == '>')
+		return (7);
+	else if (str && str[1] && ((str[0] == '<' && str[1] == '<') || (str[2] && str[0] == 3 && str[1] == '<' && str[2] == '<')))
+		return (6);
+	else if (str && str[0] == '<')
 		return (4);
 	else if (str && str[0] == '>')
 		return (5);
-	else if (str && str[0] == '>' && str[1] == '>')
-		return (7);
 	else if (str && str[0] == '-')
 		return (2);
 	else if (s->command == NULL && str)
@@ -117,8 +123,11 @@ void	fill_fd(int *arr, char *str, int flag)
 	else if (flag == 7)
 		*arr = open(str, O_WRONLY | O_RDONLY | O_APPEND | O_CREAT | S_IRUSR
 			| S_IWUSR | S_IRGRP | S_IROTH, 0644);
-	// dprintf(2, "OPEN() RETURNED %d\n", *arr);
-	// perror("MINISHELL");
+	if (*arr == -1)
+	{
+		write(2, "No such file or directory\n", 26);
+		return ;
+	}
 	++count;
 }
 
@@ -190,45 +199,38 @@ int	is_builtin(char *com)
 	char	*c[7] = {"echo", "cd", "pwd", "export", "unset", "env", "exit"};
 
 	i = 0;
-	while (i < 7 && compare(com, c[i]) == 0)
-	{
+	while (i < 7 && ft_strncmp(com, c[i], ft_strlen(c[i]) + 1))
 		i++;
-	}
 	if (i == 7)
 		return (1);
 	return (0); // builtin
 }
 
-char **create_arg(simple_com *s, char *str)
+char **create_arg(char **s, char *str, int flag)
 {
 	int		size;
 	char	**arg;
 	int		i;
 
 	i = 0;
-	if (s->arg)
+	if (s)
 	{
-		size = env_size(s->arg);
+		size = env_size(s);
 		arg = malloc(sizeof(char *) * (size + 2));
 		if (!arg)
 			error_exit(5);
 		i = -1;
 		while (++i < size)
-		{
-			if (!(arg[i] = malloc(sizeof(char) * (ft_strlen(s->arg[i]) + 1))))
-				error_exit(5);
-			arg[i] = s->arg[i];
-		}
+			arg[i] = ft_strdup(s[i]);
 	}
 	else
 		if (!(arg = malloc(sizeof(char *) * 2)))
 			error_exit(5);
-	if (!(arg[i] = malloc(sizeof(char) * (ft_strlen(str) + 1))))
-		error_exit(5);
-	arg[i] = str;
+	arg[i] = ft_strdup(str);
 	arg[i+1] = NULL;
+	if (flag == 1 && s)
+		free_2d(s);
 	return (arg);
-	//free the other arg
 }
 
 void	print(simple_com *s)
@@ -238,14 +240,14 @@ void	print(simple_com *s)
 	while (s->command)
 	{
 		i = 0;
-		printf("command %s\n", s->command);
-		printf("option %s\n", s->option);
+		dprintf(2, "command %s\n", s->command);
+		dprintf(2, "option %s\n", s->option);
 		if (s->arg)
 			while (s->arg[i])
-				printf("arg %s\n", s->arg[i++]);
-		printf("infile %d\n", s->infile);
-		printf("outfile %d\n", s->outfile);
-		printf("\n");
+				dprintf(2, "arg %s\n", s->arg[i++]);
+		dprintf(2, "infile %d\n", s->infile);
+		dprintf(2, "outfile %d\n", s->outfile);
+		dprintf(2, "\n");
 		++s;
 	}
 }

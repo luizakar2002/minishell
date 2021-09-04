@@ -8,6 +8,7 @@ int	main(int ac, char **av, char **env)
 	int			i;
 	t_env		*e;
 
+	parentid = getpid();
 	status = 0;
 	if (ac != 1 || av[1] != NULL)
 		return (0);
@@ -24,7 +25,6 @@ int	main(int ac, char **av, char **env)
 	e->myenv[i] = NULL;
 	signal(SIGINT, &handle_sigint);
 	signal(SIGQUIT, SIG_IGN);
-	// signal(SIGCHLD, &handle_sigint);
 	while (1)
 	{
 		str = readline("\033[0;33mminishell > \033[0m");
@@ -35,10 +35,26 @@ int	main(int ac, char **av, char **env)
 			return (0);
 		}
 		add_history(str);
-		if (!ft_strncmp(str, "exit", 4))
+		if (!ft_strncmp(str, "exit", 5))
 			break ;
 		n = char_count(str, '|') + 1;
 		s = split_pipes(str, e);
+		if (!s)
+		{
+			printf("Wrong Input!\n");
+			status = 258;
+			continue ;
+		}
+		i = heredoc(s, e);
+		if (i == 2)
+		{
+			printf("Wrong Input!\n");
+			status = 258;
+			continue ;
+		}
+		else if(i == 1)
+			continue ;
+		signal(SIGINT, &handle_sigint);
 		exec(s, n, e);
 		signal(SIGINT, &handle_sigint);
 		signal(SIGQUIT, SIG_IGN);
@@ -46,18 +62,15 @@ int	main(int ac, char **av, char **env)
 		while (j < n)
 		{
 			if (s[j].infile != 0)
-			{
-				// dprintf(2, "parent infile: %d\n", s[j].infile);
 				close(s[j].infile);
-			}
 			if (s[j].outfile != 1)
-			{
-				// dprintf(2, "parent outfile: %d\n", s[j].outfile);
 				close(s[j].outfile);
-			}
 			j++;
 		}
 		free(str);
+		free_coms(s);
 	}
+	free_2d(e->myenv);
+	free(e);
 	return (0);
 }

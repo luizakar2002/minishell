@@ -10,6 +10,8 @@ simple_com	*init_simple_com(simple_com *s)
 	s->arg = NULL;
 	s->infile = 0;
 	s->outfile = 1;
+	s->dlm = NULL;
+	s->herdoc = 0;
 	return (s);
 }
 
@@ -22,20 +24,26 @@ void	token(char *str, simple_com *s)
 	i = 0;
 	j = 0;
 	len = 0;
+	// printf("str %s\n", str);
 	if (check(str, s) == 1)
 		s->command = str;
 	else if (check(str, s) == 8)
 		s->command = str + 1;
 	else if (check(str, s) == 9)
-		s->arg = create_arg(s, str + 1);
+		s->arg = create_arg(s->arg, str + 1, 1);
 	else if (check(str, s) == 2)
 		s->option = str;
 	else if (check(str, s) == 3)
-		s->arg = create_arg(s, str);
+		s->arg = create_arg(s->arg, str, 1);
 	else if (check(str, s) == 4)
 		fill_fd(&s->infile, str + 1, 4);
 	else if (check(str, s) == 5)
 		fill_fd(&s->outfile, str + 1, 5);
+	else if (check(str, s) == 6)
+	{
+		s->herdoc = 1;
+		s->dlm = create_arg(s->dlm, str, 0);
+	}
 	else if (check(str, s) == 7)
 		fill_fd(&s->outfile, str + 2, 7);
 }
@@ -55,6 +63,11 @@ char	**divide(char *s)
 	w = NULL;
 	s = ft_strtrim(s, " ");
 	word_cnt = char_count(s, ' ');
+	if (char_count(s, '\'') % 2 == 1 || char_count(s, '"') % 2 == 1)
+	{
+		status = 1;
+		return (NULL);
+	}
 	if (!s || !(words = (char **)malloc(sizeof(char *) * (word_cnt + 2))))
 		error_exit(5);
 	i = 0;
@@ -81,7 +94,7 @@ char	**divide(char *s)
 			{
 				if (redi)
 				{
-					words[j++] = ft_strjoin(redi, ft_substr(s, i - len, len));
+					words[j++] = ft_strjoin(redi, ft_substr(s, i - len, len), 0);
 					redi = NULL;
 				}
 				else
@@ -108,7 +121,7 @@ char	**divide(char *s)
 		i++;
 	}
 	if (redi)
-		words[j++] = ft_strjoin(redi, ft_substr(s, i - len, len));
+		words[j++] = ft_strjoin(redi, ft_substr(s, i - len, len), 0);
 	else
 		words[j++] = ft_substr(s, i - len, len);
 	words[j] = 0;
@@ -136,9 +149,14 @@ simple_com	*fill_struct(char *str, t_env *env)
 	ss = NULL;
 	s = init_simple_com(s);
 	div = divide(str);
+	if (!div)
+		return (NULL);
 	i = -1;
 	while (div[++i])
+	{
 		token(remove_quote(div[i], env), s);
+	}
+	free(div);
 	return (s);
 }
 
@@ -149,13 +167,20 @@ simple_com	*split_pipes(char *str, t_env *env)
 	int			i;
 
 	tab = ft_split(str, '|');
+	if (!tab[0])
+		return (NULL);
 	arr = malloc(sizeof(simple_com) * (char_count(str, '|') + 2));
 	if (!arr)
 		error_exit(5);
 	i = 0;
 	while (i < (char_count(str, '|') + 1))
 	{
-		arr[i] = *fill_struct(tab[i], env);
+		if (!is_valid(tab[i]))
+			return (NULL);
+		if (!fill_struct(tab[i], env))
+			return (NULL);
+		else
+			arr[i] = *fill_struct(tab[i], env);
 		++i;
 	}
 	arr[i] = (simple_com) {.command = NULL, .option = NULL, .arg = NULL};
@@ -167,9 +192,9 @@ void	handle_sigint(int sig)
 	struct termios term;
 
 	tcgetattr(0, &term);
-		term.c_lflag &= ~ECHO;
-		term.c_lflag &= ~ECHOCTL;
-		term.c_lflag |= ECHO;
+	term.c_lflag &= ~ECHO;
+	term.c_lflag &= ~ECHOCTL;
+	term.c_lflag |= ECHO;
 	tcsetattr(0, TCSANOW, &term);
 	if (sig == SIGINT)
 	{
