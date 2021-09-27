@@ -3,7 +3,7 @@
 int	check_export(char *arg)
 {
 	int	i;
-
+	
 	if (ft_isalpha(arg[0]) || arg[0] == '_')
 	{
 		i = 1;
@@ -14,6 +14,8 @@ int	check_export(char *arg)
 			else
 				return (0);
 		}
+		if (arg[i] && arg[i] == '=')
+			return (2);
 		return (1);
 	}
 	else
@@ -212,4 +214,34 @@ void	free_coms(simple_com *s)
 	}
 	i = -1;
 	free(s);
+}
+
+int	only_digits(char *str)
+{
+	int i;
+
+	i = 0;
+	while (str[i])
+	{
+		if (!(str[i] >= '0' && str[i] <= '9'))
+			return (0);
+		i++;
+	}
+	return (1);
+}
+
+int check_com(char *com)
+{
+	int i;
+
+	i = 0;
+	if (!com)
+		return (1);
+	while(com[i])
+	{
+		if(ft_isalpha(com[i]))
+			return (1);
+		++i;
+	}
+	return (0);
 }

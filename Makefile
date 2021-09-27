@@ -3,18 +3,17 @@ NAME        = minishell
 SRCS        = $(wildcard *.c)
 OBJS        = $(SRCS:.c=.o)
 LIBFT       = libft/libft.a
-CC          = gcc  -Wall -Werror -Wextra -std=gnu99 -m64 -g
+CC          = gcc  
+FLAGS		= -Wall -Werror -Wextra
 RM          = rm -rf
 
-# ATTENTION! These flags are machine-specific. Edit them so that they point
-# to the location of your `readline` library.
-LDFLAGS="-L/Users/ghovhann/.brew/opt/readline/lib"
-CPPFLAGS="-I/Users/ghovhann/.brew/opt/readline/include"
+LDFLAGS="-L/Users/$$(whoami)/.brew/opt/readline/lib"
+CPPFLAGS="-I/Users/$$(whoami)/.brew/opt/readline/include"
 
 all: $(NAME)
 
 $(NAME): $(OBJS) $(LIBFT)
-	@$(CC) $(FLAGS) $(OBJS) -o $(NAME) $(LIBFT) -lreadline $(LDFLAGS) $(CPPFLAGS)
+	@$(CC)  $(FLAGS) $(OBJS) -o $(NAME) $(LIBFT) -lreadline $(LDFLAGS) $(CPPFLAGS)
 
 $(LIBFT):
 	@make all -C ./libft --silent

@@ -33,6 +33,14 @@ char *get_cmd_path(simple_com *s, t_env *e)
     int fd;
 	char	**paths;
 
+	if (!get_env("PATH", e))
+	{
+		ft_putstr_fd("minishell: ", 2);
+		ft_putstr_fd(s->command, 2);
+		ft_putendl_fd(": No such file or directory", 2);
+		status = 127;
+		exit(127);
+	}
 	while (e->myenv[i] && ft_strncmp(e->myenv[i], "PATH=", 5))
 		++i;
 	paths = ft_split(e->myenv[i], ':');
@@ -54,7 +62,6 @@ char *get_cmd_path(simple_com *s, t_env *e)
         free(command);
         free(path);
     }
-    exit(126);
     return (NULL);
 }
 
@@ -80,11 +87,13 @@ void	free_2d(char **arr)
 	free(arr);
 }
 
-char **update_env(t_env *e)
+char **update_env(t_env *e, char *oldpath)
 {
-	char	*temp;
 	char	*path;
 	int		i;
+	int		flag;
+	int		size;
+	char	**newenv;
 
 	path = malloc(sizeof(char) * 1000);
 	if (!path)
@@ -92,21 +101,62 @@ char **update_env(t_env *e)
 	if (!getcwd(path, 1000))
 		error_exit (3);
 	i = 0;
-	temp = get_env("PWD", e);
+	flag = 0;
+	while (e->myenv[i])
+	{
+		if (ft_strncmp("OLDPWD=", e->myenv[i], 7) == 0)
+		{
+			free(e->myenv[i]);
+			e->myenv[i] = ft_strdup(ft_strjoin("OLDPWD=", oldpath, 0));
+			flag = 1;
+		}
+		++i;
+	}
 	i = 0;
+	if (flag == 0)
+	{
+		size = env_size(e->myenv);
+		newenv = malloc(sizeof(char *) * (size + 2));
+		i = 0;
+		while (i < size - 1)
+		{
+			newenv[i] = ft_strdup(e->myenv[i]);
+			++i;
+		}
+		newenv[i++] = ft_strdup(ft_strjoin("OLDPWD=", path, 0));	
+		newenv[i] = ft_strdup(e->myenv[size - 1]);
+		newenv[i + 1] = NULL;
+		free_2d(e->myenv);
+		e->myenv = newenv;
+	}
+	i = 0;
+	flag = 0;
 	while (e->myenv[i])
 	{
 		if (ft_strncmp("PWD=", e->myenv[i], 4) == 0)
 		{
 			free(e->myenv[i]);
 			e->myenv[i] = ft_strdup(ft_strjoin("PWD=", path, 0));
-		}
-		else if (ft_strncmp("OLDPWD=", e->myenv[i], 7) == 0)
-		{
-			free(e->myenv[i]);
-			e->myenv[i] = ft_strdup(ft_strjoin("OLDPWD=", temp, 0));
+			flag = 1;
 		}
 		++i;
+	}
+	i = 0;
+	if (flag == 0)
+	{
+		size = env_size(e->myenv);
+		newenv = malloc(sizeof(char *) * (size + 2));
+		i = 0;
+		while (i < size - 1)
+		{
+			newenv[i] = ft_strdup(e->myenv[i]);
+			++i;
+		}
+		newenv[i++] = ft_strdup(ft_strjoin("PWD=", path, 0));	
+		newenv[i] = ft_strdup(e->myenv[size - 1]);
+		newenv[i + 1] = NULL;
+		free_2d(e->myenv);
+		e->myenv = newenv;
 	}
 	return (e->myenv);
 }
@@ -125,8 +175,8 @@ char *get_env(char *key, t_env *e)
 		if (ft_strncmp(temp, e->myenv[i], ft_strlen(temp)) == 0)
 		{
 			free(temp);
-			if (*(e->myenv[i] + ft_strlen(temp)) == '\0')
-				return ("");
+			// if (*(e->myenv[i] + ft_strlen(temp)) == '\0')
+			// 	return ("");
 			return (e->myenv[i] + ft_strlen(temp));
 		}
 		++i;
@@ -157,7 +207,6 @@ char	*redir(char *str)
 		s[1] = str[1];
 	}
 	s[len - 1] = 0;
-	// printf("redir %s\n", s);
 	return (s);
 }
 
@@ -215,15 +264,27 @@ char *remove_quote(char *str, t_env *e)
 			}
 			if (len == 0)
 			{
-				j[0] = str[i - 1];
-				s = ft_strjoin(s, j, 1);
+				if (!str[i] || str[i] == ' ')
+				{
+					j[0] = str[i - 1];
+					s = ft_strjoin(s, j, 1);
+					i--;
+				}
+				else
+				{
+					s = ft_strjoin(s, "", 0);
+				}
 			}
 			else
 			{
 				if (!get_env(ft_substr(str, i - len, len), e))
-					s = ft_strjoin(s, "", 1);
+				{
+					s = ft_strjoin(s, "", 1); 
+				}
 				else
+				{
 					s = ft_strjoin(s, get_env(ft_substr(str, i - len, len), e), 1);
+				}
 				if (qmark != -1)
 					i--;
 			}
@@ -231,7 +292,7 @@ char *remove_quote(char *str, t_env *e)
 		else
 		{
 			j[0] = str[i];
-			s = ft_strjoin(s, j, 1); // free in strjoin
+			s = ft_strjoin(s, j, 1);
 		}
 		if (is_redir(str + i) && (q == 1 || q1 == 1))
 			flag = 1;

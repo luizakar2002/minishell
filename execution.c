@@ -8,8 +8,9 @@ void	exec(simple_com *s, int n, t_env *e)
 	int		pid;
 	int		pids[n];
 	int		k;
+	int		stat;
 
-	if (n == 1 && !is_builtin(s->command))
+	if (n == 1 && s->command && !is_builtin(s->command))
 	{
 		call_command(s, e, 0);
 		return ;
@@ -26,10 +27,8 @@ void	exec(simple_com *s, int n, t_env *e)
 	pids[i] = 1;
 	while (pids[j] != 0 && i < n)
 	{
-		if (s[i].infile == -1)
-		{
+		if (s[i].infile == -1 || s[i].outfile == -1)
 			i++;
-		}
 		j = i;
 		pids[i] = fork();
 		if (pids[i] == -1)
@@ -44,7 +43,7 @@ void	exec(simple_com *s, int n, t_env *e)
 			signal(SIGQUIT, SIG_DFL);
 			dup2(s[i].infile, STDIN_FILENO);
 			dup2(s[i].outfile, STDOUT_FILENO);
-			if (is_builtin(s[i].command))
+			if (s[i].command && is_builtin(s[i].command))
 			{
 				k = 0;
 				while (k < n - 1)
@@ -60,10 +59,10 @@ void	exec(simple_com *s, int n, t_env *e)
 				if (s[i].outfile != 1)
 					close(s[i].outfile);
 				execve(get_cmd_path(s + i, e), merge(s + i), e->myenv);
-					// dprintf(2, "Command not found\n");
+				printf("minishell: %s: command not found\n", (s + i)->command);
 				exit(127);
 			}
-			else
+			else if (s[i].command && !is_builtin(s[i].command))
 			{
 				k = 0;
 				while (k < n - 1)
@@ -81,6 +80,8 @@ void	exec(simple_com *s, int n, t_env *e)
 				s[i].outfile = 1;
 				call_command(s + i, e, 1);
 			}
+			else
+				exit(0);
 		}
 		i++;
 	}
@@ -99,17 +100,15 @@ void	exec(simple_com *s, int n, t_env *e)
 	while (j < n)
 	{
 		
-		pid = waitpid(-1, &status, 0);
+		pid = waitpid(-1, &stat, 0);
 		if (pid == pids[n - 1])
 		{
-			if (!WTERMSIG(status))
-				status = WEXITSTATUS(status);
+			if (!WTERMSIG(stat))
+				status = WEXITSTATUS(stat);
 			else
-				status = WTERMSIG(status) + 128;
-			if (status == 131)
+				status = WTERMSIG(stat) + 128;
+			if (status == 131 && ft_strncmp(s[n - 1].command, "exit", 5) != 0)
 				write(1, "Quit\n", 5);
-			else if (status == 127 || status == 126)
-				printf("Command not found\n");
 		}
 		j++;
 	}
@@ -130,7 +129,7 @@ void    call_command(simple_com *s, t_env *e, int ex)
     else if (!ft_strncmp(s->command, "env", 4))
         status = print_env(s, e, 0, ex);
     else if (!ft_strncmp(s->command, "exit", 5))
-        exit(0);
-	if (status == 1)
-		printf("Wrong Input\n");
+        status = exitt(s, ex);
+	// if (status == 1)              //we shold do this in different ways as it is done in builtins(e.g. exit 1 2)
+	// 	printf("Wrong Input\n");
 }

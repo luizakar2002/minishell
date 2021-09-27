@@ -24,7 +24,6 @@ void	token(char *str, simple_com *s)
 	i = 0;
 	j = 0;
 	len = 0;
-	// printf("str %s\n", str);
 	if (check(str, s) == 1)
 		s->command = str;
 	else if (check(str, s) == 8)
@@ -32,7 +31,7 @@ void	token(char *str, simple_com *s)
 	else if (check(str, s) == 9)
 		s->arg = create_arg(s->arg, str + 1, 1);
 	else if (check(str, s) == 2)
-		s->option = str;
+		s->option = str; 
 	else if (check(str, s) == 3)
 		s->arg = create_arg(s->arg, str, 1);
 	else if (check(str, s) == 4)
@@ -63,11 +62,6 @@ char	**divide(char *s)
 	w = NULL;
 	s = ft_strtrim(s, " ");
 	word_cnt = char_count(s, ' ');
-	if (char_count(s, '\'') % 2 == 1 || char_count(s, '"') % 2 == 1)
-	{
-		status = 1;
-		return (NULL);
-	}
 	if (!s || !(words = (char **)malloc(sizeof(char *) * (word_cnt + 2))))
 		error_exit(5);
 	i = 0;
@@ -109,6 +103,8 @@ char	**divide(char *s)
 		}
 		else if (redir(s + i) && d == -1 && si == -1)
 		{
+			if (len != 0)
+				words[j++] = ft_substr(s, i - len, len);
 			redi = redir(s + i);
 			i += ft_strlen(redi);
 			while (s[i] && ft_isspace(s[i]))
@@ -165,6 +161,7 @@ simple_com	*split_pipes(char *str, t_env *env)
 	char 		**tab;
 	simple_com	*arr;
 	int			i;
+	simple_com	*temp;
 
 	tab = ft_split(str, '|');
 	if (!tab[0])
@@ -175,12 +172,14 @@ simple_com	*split_pipes(char *str, t_env *env)
 	i = 0;
 	while (i < (char_count(str, '|') + 1))
 	{
-		if (!is_valid(tab[i]))
+		if (!is_valid(tab[i])) // in is valid check redirection syntax errors
 			return (NULL);
-		if (!fill_struct(tab[i], env))
+		temp = fill_struct(tab[i], env);
+		if (!temp)
 			return (NULL);
-		else
-			arr[i] = *fill_struct(tab[i], env);
+		arr[i] = *temp;
+		if (!check_com(arr[i].command))
+			return (NULL);
 		++i;
 	}
 	arr[i] = (simple_com) {.command = NULL, .option = NULL, .arg = NULL};

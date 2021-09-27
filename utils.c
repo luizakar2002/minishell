@@ -33,15 +33,11 @@ void	error_exit(int error)
 		write(2, "Error\n", 7);
 		exit(1);
 	}
-	else if (error == 127)
+	else if (error == 2)
 	{
-		write(2, "Command not found\n", 18);
-		exit(127);
-	}
-	else if (error == 126)
-	{
-		write(2, "Unable to execute command\n", 26);
-		exit(126);
+		status = 1;
+		write(2, "No such file or directory\n", 26);
+		exit(2);
 	}
 	else if (error == 3)
 	{
@@ -58,11 +54,20 @@ void	error_exit(int error)
 		write(2, "malloc:: Not enough space\n", 26);
 		exit(1);
 	}
-	else if (error == 2)
+	else if (error == 6)
 	{
-		status = 1;
-		write(2, "No such file or directory\n", 26);
-		exit(2);
+		write(2, "minishell: too many arguments\n", 30);
+		exit(1);
+	}
+	else if (error == 127)
+	{
+		write(2, "Command not found\n", 18);
+		exit(127);
+	}
+	else if (error == 126)
+	{
+		write(2, "Unable to execute command\n", 26);
+		exit(126);
 	}
 	exit(0);
 }
@@ -91,7 +96,7 @@ int	check(char *str, simple_com *s)
 		return (4);
 	else if (str && str[0] == '>')
 		return (5);
-	else if (str && str[0] == '-')
+	else if (str && str[0] == '-' && s->arg == NULL)
 		return (2);
 	else if (s->command == NULL && str)
 		return (1);
@@ -117,15 +122,13 @@ void	fill_fd(int *arr, char *str, int flag)
 	else if (flag == 5)
 		*arr = open(str, O_WRONLY | O_RDONLY | O_TRUNC | O_CREAT | S_IRUSR
 			| S_IWUSR | S_IRGRP | S_IROTH , 0644);
-	else if (flag == 6)
-		*arr = open(str, O_WRONLY | O_RDONLY | O_TRUNC | O_CREAT | S_IRUSR
-			| S_IWUSR | S_IRGRP | S_IROTH, 0644);
 	else if (flag == 7)
 		*arr = open(str, O_WRONLY | O_RDONLY | O_APPEND | O_CREAT | S_IRUSR
 			| S_IWUSR | S_IRGRP | S_IROTH, 0644);
 	if (*arr == -1)
 	{
-		write(2, "No such file or directory\n", 26);
+		write(2, "Could not open file\n", 21);
+		status = 1;
 		return ;
 	}
 	++count;
@@ -188,7 +191,7 @@ int	special_char(char *str)
 		j++;
 	}	
 	if (i == 7)
-		return (0); //no special chars
+		return (0);
 	else
 		return (1);
 }
@@ -203,7 +206,7 @@ int	is_builtin(char *com)
 		i++;
 	if (i == 7)
 		return (1);
-	return (0); // builtin
+	return (0);
 }
 
 char **create_arg(char **s, char *str, int flag)
@@ -231,23 +234,4 @@ char **create_arg(char **s, char *str, int flag)
 	if (flag == 1 && s)
 		free_2d(s);
 	return (arg);
-}
-
-void	print(simple_com *s)
-{
-	int	i;
-
-	while (s->command)
-	{
-		i = 0;
-		dprintf(2, "command %s\n", s->command);
-		dprintf(2, "option %s\n", s->option);
-		if (s->arg)
-			while (s->arg[i])
-				dprintf(2, "arg %s\n", s->arg[i++]);
-		dprintf(2, "infile %d\n", s->infile);
-		dprintf(2, "outfile %d\n", s->outfile);
-		dprintf(2, "\n");
-		++s;
-	}
 }

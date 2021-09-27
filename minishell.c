@@ -34,8 +34,6 @@ int	main(int ac, char **av, char **env)
 			return (0);
 		}
 		add_history(str);
-		if (!ft_strncmp(str, "exit", 5))
-			break ;
 		n = char_count(str, '|') + 1;
 		s = split_pipes(str, e);
 		if (!s)
